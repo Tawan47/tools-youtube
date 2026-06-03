@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube MP3 Downloader</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+      color: #fff;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 620px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .logo svg { width: 40px; height: 40px; }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #ff0000, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 8px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    input[type="url"] {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    input[type="url"]::placeholder { color: rgba(255,255,255,0.35); }
+    input[type="url"]:focus { border-color: #ff4e4e; }
+
+    button {
+      padding: 12px 22px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, #ff0000, #c0392b);
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    button:hover { opacity: 0.88; }
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    #status-box {
+      margin-top: 24px;
+      display: none;
+    }
+
+    .status-label {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 8px;
+    }
+
+    .progress-bar-bg {
+      height: 8px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff0000, #ff6b6b);
+      border-radius: 99px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .status-msg {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      min-height: 22px;
+    }
+
+    .status-msg.success { color: #2ecc71; }
+    .status-msg.error   { color: #e74c3c; }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 32px 0 12px;
+      color: rgba(255,255,255,0.8);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #files-list { display: none; }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      gap: 10px;
+    }
+
+    .file-name {
+      font-size: 0.88rem;
+      color: rgba(255,255,255,0.85);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .file-size {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.4);
+      white-space: nowrap;
+    }
+
+    .dl-btn {
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.12);
+    }
+
+    .dl-btn:hover { background: rgba(255,255,255,0.22); opacity: 1; }
+
+    .empty-msg {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.35);
+      text-align: center;
+      padding: 16px 0;
+    }
+
+    footer {
+      margin-top: 32px;
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.25);
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none">
+      <rect width="24" height="24" rx="6" fill="#FF0000"/>
+      <polygon points="10,8 16,12 10,16" fill="white"/>
+    </svg>
+    <h1>YouTube MP3 Downloader</h1>
+  </div>
+
+  <label for="url-input">ลิ้ง YouTube</label>
+  <div class="input-row">
+    <input id="url-input" type="url" placeholder="https://www.youtube.com/watch?v=..." />
+    <button id="dl-btn" onclick="startDownload()">โหลดเพลง</button>
+  </div>
+
+  <div id="status-box">
+    <div class="status-label">ความคืบหน้า</div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+    <div class="status-msg" id="status-msg"></div>
+  </div>
+
+  <div id="files-section">
+    <div class="section-title">
+      <span>🎵</span> เพลงที่ดาวน์โหลดแล้ว
+      <button onclick="loadFiles()" style="margin-left:auto;padding:5px 12px;font-size:0.78rem;background:rgba(255,255,255,0.1);">รีเฟรช</button>
+    </div>
+    <div id="files-list"></div>
+  </div>
+</div>
+
+<footer>ไฟล์บันทึกไปที่ ~/Music/YouTube</footer>
+
+<script>
+let pollInterval = null;
+
+function formatSize(bytes) {
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+async function startDownload() {
+  const url = document.getElementById('url-input').value.trim();
+  if (!url) return;
+
+  const btn = document.getElementById('dl-btn');
+  const statusBox = document.getElementById('status-box');
+  const msg = document.getElementById('status-msg');
+  const fill = document.getElementById('progress-fill');
+
+  btn.disabled = true;
+  statusBox.style.display = 'block';
+  msg.className = 'status-msg';
+  msg.textContent = 'กำลังเริ่มดาวน์โหลด...';
+  fill.style.width = '0%';
+
+  try {
+    const res = await fetch('/api/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      msg.className = 'status-msg error';
+      msg.textContent = data.error || 'เกิดข้อผิดพลาด';
+      btn.disabled = false;
+      return;
+    }
+
+    pollStatus(data.downloadId);
+  } catch (e) {
+    msg.className = 'status-msg error';
+    msg.textContent = 'ไม่สามารถเชื่อมต่อ server ได้';
+    btn.disabled = false;
+  }
+}
+
+function pollStatus(id) {
+  if (pollInterval) clearInterval(pollInterval);
+
+  pollInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`/api/status/${id}`);
+      const data = await res.json();
+      const fill = document.getElementById('progress-fill');
+      const msg = document.getElementById('status-msg');
+
+      fill.style.width = data.progress + '%';
+
+      if (data.status === 'downloading') {
+        msg.className = 'status-msg';
+        msg.textContent = `กำลังดาวน์โหลด... ${data.progress.toFixed(1)}%`;
+      } else if (data.status === 'done') {
+        clearInterval(pollInterval);
+        fill.style.width = '100%';
+        msg.className = 'status-msg success';
+        msg.textContent = data.filename
+          ? `✓ ดาวน์โหลดสำเร็จ: ${data.filename}`
+          : '✓ ดาวน์โหลดสำเร็จ!';
+        document.getElementById('dl-btn').disabled = false;
+        document.getElementById('url-input').value = '';
+        loadFiles();
+      } else if (data.status === 'error') {
+        clearInterval(pollInterval);
+        msg.className = 'status-msg error';
+        msg.textContent = data.error || 'เกิดข้อผิดพลาด';
+        document.getElementById('dl-btn').disabled = false;
+      }
+    } catch {
+      clearInterval(pollInterval);
+    }
+  }, 800);
+}
+
+async function loadFiles() {
+  const list = document.getElementById('files-list');
+  list.style.display = 'block';
+  list.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/files');
+    const data = await res.json();
+
+    if (!data.files.length) {
+      list.innerHTML = '<div class="empty-msg">ยังไม่มีไฟล์ที่ดาวน์โหลด</div>';
+      return;
+    }
+
+    data.files.forEach(f => {
+      const item = document.createElement('div');
+      item.className = 'file-item';
+      item.innerHTML = `
+        <div class="file-name" title="${f.name}">🎵 ${f.name.replace(/\.mp3$/, '')}</div>
+        <div class="file-size">${formatSize(f.size)}</div>
+        <button class="dl-btn" onclick="downloadFile('${encodeURIComponent(f.name)}')">⬇ บันทึก</button>
+      `;
+      list.appendChild(item);
+    });
+  } catch {
+    list.innerHTML = '<div class="empty-msg">ไม่สามารถโหลดรายการไฟล์</div>';
+  }
+}
+
+function downloadFile(filename) {
+  window.open(`/api/download-file/${filename}`, '_blank');
+}
+
+document.getElementById('url-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startDownload();
+});
+
+loadFiles();
+</script>
+</body>
+</html>
